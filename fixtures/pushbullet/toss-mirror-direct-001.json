@@ -1,0 +1,16 @@
+{
+  "type": "push",
+  "push": {
+    "type": "mirror",
+    "application_name": "토스",
+    "package_name": "viva.republica.toss",
+    "title": "10원 입금",
+    "body": "홍길동 → 내 토스뱅크 통장",
+    "client_version": 1,
+    "dismissible": true,
+    "notification_id": "masked-notification",
+    "notification_tag": "masked-tag",
+    "source_device_iden": "masked-device",
+    "source_user_iden": "masked-user"
+  }
+}

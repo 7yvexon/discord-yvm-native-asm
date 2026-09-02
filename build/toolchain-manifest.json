@@ -1,0 +1,57 @@
+{
+  "nasm": {
+    "version": "3.02",
+    "host": "windows-x64",
+    "url": "https://www.nasm.us/pub/nasm/releasebuilds/3.02/win64/nasm-3.02-win64.zip",
+    "archive_sha256": "161d0bfaff53c2f9e9f3e69fd0672323ebabafd1268976a5cec11be92a19aee7",
+    "license": "Simplified BSD-2-Clause",
+    "binaries": ["nasm.exe", "ndisasm.exe"]
+  },
+  "llvm": {
+    "version": "22.1.8",
+    "host": "windows-x64",
+    "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/clang%2Bllvm-22.1.8-x86_64-pc-windows-msvc.tar.xz",
+    "archive_sha256": "d96c2cc1736f4eb7fa43cb9bbdf56d93551a9ae0a9aadb9c99c3c3b2b712a234",
+    "license": "Apache-2.0 WITH LLVM-exception",
+    "binaries": [
+      "clang.exe",
+      "clang++.exe",
+      "clang-cl.exe",
+      "lld-link.exe",
+      "ld.lld.exe",
+      "llvm-ar.exe",
+      "llvm-as.exe",
+      "llvm-config.exe",
+      "llvm-dlltool.exe",
+      "llvm-mc.exe",
+      "llvm-nm.exe",
+      "llvm-objdump.exe",
+      "llvm-readobj.exe",
+      "llvm-readelf.exe",
+      "llvm-objcopy.exe",
+      "llvm-ranlib.exe",
+      "llvm-strip.exe",
+      "llvm-size.exe",
+      "llvm-rc.exe"
+    ],
+    "resource_tree": "lib/clang"
+  },
+  "sqlite": {
+    "version": "3.53.4",
+    "host": "windows-x64",
+    "dll_url": "https://www.sqlite.org/2026/sqlite-dll-win-x64-3530400.zip",
+    "dll_archive_sha3_256": "deddee963c810d1eeac3ce5e15c7c41da21a1c54d7a39cf54fbf577d2f50de3a",
+    "tools_url": "https://www.sqlite.org/2026/sqlite-tools-win-x64-3530400.zip",
+    "tools_archive_sha3_256": "88b4659fe747896b853af10157316b4ade143553efb89c1c8ca7423a278dcc8b",
+    "license": "Public domain",
+    "binaries": ["sqlite3.dll", "sqlite3.exe", "sqldiff.exe", "sqlite3_analyzer.exe", "sqlite3_rsync.exe"]
+  },
+  "aarch64_sysroot": {
+    "version": "glibc 2.36-9+deb12u14",
+    "host": "linux-aarch64-target",
+    "url": "https://deb.debian.org/debian/pool/main/g/glibc/libc6_2.36-9+deb12u14_arm64.deb",
+    "archive_sha256": "01f4330719fd4f65580e16ea5a0527f372fca750e8f588d26deaf09f2d3b1cf4",
+    "license": "LGPL-2.1-or-later",
+    "runtime": ["libc.so.6", "libdl.so.2", "ld-linux-aarch64.so.1"]
+  }
+}

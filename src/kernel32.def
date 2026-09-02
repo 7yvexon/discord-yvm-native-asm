@@ -1,0 +1,21 @@
+LIBRARY KERNEL32.dll
+EXPORTS
+    CloseHandle
+    CreateDirectoryA
+    CreateFileA
+    GetCommandLineW
+    GetFileSize
+    GetStdHandle
+    GetSystemTimeAsFileTime
+    GetCurrentProcessId
+    ReadFile
+    WriteFile
+    WideCharToMultiByte
+    ExitProcess
+    FreeLibrary
+    GetProcAddress
+    LoadLibraryA
+    Sleep
+    CreateThread
+    WaitForSingleObject
+    SetConsoleCtrlHandler

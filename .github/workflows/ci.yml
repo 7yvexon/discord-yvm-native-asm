@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Compile Python sources
+        run: python -m compileall -q vending_machine tests build
+      - name: Check patch formatting
+        run: git diff --check
+
+  native-windows-x64:
+    name: Native Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: Bootstrap portable toolchain
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build/bootstrap-tools.ps1
+      - name: Bootstrap AArch64 sysroot
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build/bootstrap-aarch64-sysroot.ps1
+      - name: Build and inspect native targets
+        shell: pwsh
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build/verify-toolchain.ps1
+      - name: Run Windows native and regression tests
+        shell: pwsh
+        run: |
+          $env:YUL_NATIVE_BINARY = Join-Path $env:GITHUB_WORKSPACE 'build\windows-x64\yul-vending-machine.exe'
+          $env:YUL_CORE_LIBRARY = Join-Path $env:GITHUB_WORKSPACE 'build\windows-x64\yul-core.dll'
+          if (!(Test-Path -LiteralPath $env:YUL_NATIVE_BINARY)) { throw "Windows native launcher is missing" }
+          if (!(Test-Path -LiteralPath $env:YUL_CORE_LIBRARY)) { throw "Windows native core is missing" }
+          if (!(Test-Path -LiteralPath (Join-Path $env:GITHUB_WORKSPACE 'build\windows-x64\sqlite3.dll'))) { throw "Windows SQLite runtime is missing" }
+          $nativeOutput = & python -m unittest tests.test_native_cli tests.test_native_core tests.test_native_protocol_contracts -v 2>&1
+          $nativeOutput
+          if ($LASTEXITCODE -ne 0 -or ($nativeOutput -join "`n") -match 'skipped=') { throw "Windows native tests failed or were skipped" }
+          python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { throw "Windows regression tests failed" }
+      - name: Upload Windows native artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-windows-x64
+          if-no-files-found: error
+          path: |
+            build/windows-x64/yul-vending-machine.exe
+            build/windows-x64/yul-core.dll
+            build/windows-x64/sqlite3.dll
+          retention-days: 7
+      - name: Build Linux AArch64 release package
+        shell: pwsh
+        env:
+          RELEASE_ID: ci-${{ github.sha }}
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File build/create-release.ps1 -ReleaseId $env:RELEASE_ID -Architecture linux-aarch64 -SourceCommit $env:GITHUB_SHA
+      - name: Upload Linux AArch64 release package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-linux-aarch64-release
+          if-no-files-found: error
+          path: build/releases/ci-${{ github.sha }}
+          retention-days: 7
+
+  native-linux-aarch64:
+    name: Native Linux AArch64
+    needs: native-windows-x64
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: Download Linux AArch64 release package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: native-linux-aarch64-release
+          path: native-release
+      - name: Verify Linux AArch64 release and runtime prerequisites
+        shell: bash
+        run: |
+          set -eu
+          release="$(find "$GITHUB_WORKSPACE/native-release" -type f -name RELEASE.json -print -quit)"
+          if [ -z "$release" ]; then
+              printf '%s\n' "Linux AArch64 release metadata is missing" >&2
+              exit 1
+          fi
+          release="$(dirname "$release")"
+          chmod +x "$release/yul-vending-machine"
+          for command in file readelf ldconfig timeout sha256sum python3; do
+              command -v "$command" >/dev/null 2>&1 || { printf 'required command is missing: %s\n' "$command" >&2; exit 1; }
+          done
+          ldconfig -p 2>/dev/null | grep -Fq 'libcurl.so.4' || { printf '%s\n' 'libcurl.so.4 is missing on the AArch64 runner' >&2; exit 1; }
+          ldconfig -p 2>/dev/null | grep -Fq 'libsqlite3.so.0' || { printf '%s\n' 'libsqlite3.so.0 is missing on the AArch64 runner' >&2; exit 1; }
+          file -Lb "$release/yul-vending-machine" | grep -Eiq 'ELF.*(aarch64|ARM)' || { printf '%s\n' 'Linux launcher is not AArch64 ELF' >&2; exit 1; }
+          file -Lb "$release/yul-core.so" | grep -Eiq 'ELF.*(aarch64|ARM)' || { printf '%s\n' 'Linux native core is not AArch64 ELF' >&2; exit 1; }
+          /bin/sh "$release/deploy/verify-release.sh" "$release"
+          printf '%s\n' "$release" > "$RUNNER_TEMP/yul-release-path"
+      - name: Run Linux AArch64 smoke tests
+        shell: bash
+        run: |
+          set -eu
+          release="$(cat "$RUNNER_TEMP/yul-release-path")"
+          smoke_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/yul-native-smoke.XXXXXX")"
+          cleanup() { rm -rf -- "$smoke_dir"; }
+          trap cleanup EXIT HUP INT TERM
+          mkdir -p "$smoke_dir/data"
+          cp "$release/config.example.ini" "$smoke_dir/config.ini"
+          sed -i "s#^DATABASE_PATH=.*#DATABASE_PATH=$smoke_dir/data/vending.db#" "$smoke_dir/config.ini"
+          "$release/yul-vending-machine" --config "$smoke_dir/config.ini" panel-text >/dev/null
+          "$release/yul-vending-machine" --config "$smoke_dir/config.ini" init-db >/dev/null
+          "$release/yul-vending-machine" --config "$smoke_dir/config.ini" create-order smoke-user smoke-name 10 >/dev/null
+          "$release/yul-vending-machine" --config "$smoke_dir/config.ini" support-total smoke-user >/dev/null
+      - name: Run Linux AArch64 native and regression tests
+        shell: bash
+        run: |
+          set -eu
+          release="$(cat "$RUNNER_TEMP/yul-release-path")"
+          export YUL_NATIVE_BINARY="$release/yul-vending-machine"
+          export YUL_CORE_LIBRARY="$release/yul-core.so"
+          native_output="$(python -m unittest tests.test_native_cli tests.test_native_core tests.test_native_protocol_contracts -v 2>&1)" || {
+              printf '%s\n' "$native_output"
+              exit 1
+          }
+          printf '%s\n' "$native_output"
+          if printf '%s\n' "$native_output" | grep -Eq 'skipped='; then
+              printf '%s\n' 'Linux AArch64 native tests were skipped' >&2
+              exit 1
+          fi
+          python -m unittest discover -s tests -v

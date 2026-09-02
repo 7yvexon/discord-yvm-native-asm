@@ -1,0 +1,14 @@
+{
+  "type": "push",
+  "subtype": "mirror",
+  "push": {
+    "iden": "toss-invalid-001",
+    "type": "mirror",
+    "application_name": "Toss",
+    "package_name": "com.tossbank",
+    "title": "잔액 알림",
+    "body": "잔액: 20,000원\n거래 시각: 2026-08-24 10:00",
+    "created": 1760000010,
+    "modified": 1760000011
+  }
+}

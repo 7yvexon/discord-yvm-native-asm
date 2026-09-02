@@ -1,0 +1,14 @@
+{
+  "type": "push",
+  "subtype": "mirror",
+  "push": {
+    "iden": "toss-mirror-001",
+    "type": "mirror",
+    "application_name": "Toss",
+    "package_name": "com.tossbank",
+    "title": "입금 알림",
+    "body": "입금자: 홍길동\n금액: 10,000원",
+    "created": 1760000000,
+    "modified": 1760000001
+  }
+}

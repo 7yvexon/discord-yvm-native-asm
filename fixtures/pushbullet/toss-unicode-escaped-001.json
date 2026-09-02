@@ -1,0 +1,14 @@
+{
+  "type": "push",
+  "subtype": "mirror",
+  "push": {
+    "iden": "toss-unicode-escaped-001",
+    "type": "mirror",
+    "application_name": "Toss",
+    "package_name": "com.tossbank",
+    "title": "\uc785\uae08 \ud83d\ude00 \uc54c\ub9bc",
+    "body": "\uc785\uae08\uc790: \ud64d\uae38\ub3d9\n\uae08\uc561: 10,000\uc6d0",
+    "created": 1760000000.25,
+    "modified": 1760000001.125
+  }
+}

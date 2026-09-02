@@ -1,0 +1,19 @@
+LIBRARY yul-core
+EXPORTS
+    yul_parse_amount_ascii
+    yul_normalize_name_utf8
+    yul_add_support_total
+    yul_sqlite_runtime_load
+    yul_sqlite_runtime_unload
+    yul_sqlite_open
+    yul_sqlite_close
+    yul_sqlite_exec
+    yul_sqlite_prepare
+    yul_sqlite_bind_text
+    yul_sqlite_bind_int64
+    yul_sqlite_bind_null
+    yul_sqlite_step
+    yul_sqlite_finalize
+    yul_sqlite_column_int64
+    yul_sqlite_column_text
+    yul_sqlite_errmsg
