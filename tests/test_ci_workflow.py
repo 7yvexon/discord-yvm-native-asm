@@ -33,6 +33,10 @@ class CiWorkflowTests(unittest.TestCase):
         self.assertIn("YUL_NATIVE_BINARY", self.workflow)
         self.assertIn("YUL_CORE_LIBRARY", self.workflow)
 
+    def test_linux_release_download_preserves_release_directory_name(self):
+        self.assertIn("path: build/releases/ci-${{ github.sha }}", self.workflow)
+        self.assertIn("path: native-release/ci-${{ github.sha }}", self.workflow)
+
     def test_native_tests_fail_when_they_are_skipped(self):
         self.assertIn("-match 'skipped='", self.workflow)
         self.assertIn("grep -Eq 'skipped='", self.workflow)
