@@ -46,6 +46,14 @@ Copy-Item -LiteralPath $nativeCore -Destination (Join-Path $release (Split-Path 
 Copy-Item -LiteralPath (Join-Path $root "db") -Destination $release -Recurse
 Copy-Item -LiteralPath (Join-Path $root "deploy") -Destination $release -Recurse
 Copy-Item -LiteralPath (Join-Path $root "config.example.ini") -Destination $release
+$releaseShellScripts = Get-ChildItem -LiteralPath (Join-Path $release "deploy") -File -Filter "*.sh" -Recurse
+foreach ($script in $releaseShellScripts) {
+    $scriptBytes = [System.IO.File]::ReadAllBytes($script.FullName)
+    if ($scriptBytes -contains [byte]13) {
+        $relativeScript = $script.FullName.Substring($release.Length + 1).Replace("\", "/")
+        throw "release shell script must use LF line endings: $relativeScript"
+    }
+}
 if ($Architecture -eq "windows-x64") {
     $sqliteDll = Join-Path $root ".tools\sqlite\win-x64-3.53.4\bin\sqlite3.dll"
     if (Test-Path -LiteralPath $sqliteDll) { Copy-Item -LiteralPath $sqliteDll -Destination $release }

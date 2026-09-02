@@ -112,6 +112,20 @@ class DeployScriptTests(unittest.TestCase):
         self.assertIn("$rootManifest", verifier)
         self.assertIn('if ($file.FullName -eq $rootManifest) { continue }', verifier)
 
+    def test_shell_release_files_use_lf_line_endings(self):
+        attributes = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("*.sh text eol=lf", attributes)
+        self.assertIn("*.service text eol=lf", attributes)
+        for script in (ROOT / "deploy").glob("*.sh"):
+            self.assertNotIn(b"\r", script.read_bytes(), script)
+
+    def test_release_creation_rejects_crlf_shell_scripts(self):
+        creator = (ROOT / "build" / "create-release.ps1").read_text(encoding="utf-8")
+        self.assertIn('$releaseShellScripts = Get-ChildItem -LiteralPath (Join-Path $release "deploy") -File -Filter "*.sh" -Recurse', creator)
+        self.assertIn("[System.IO.File]::ReadAllBytes($script.FullName)", creator)
+        self.assertIn("if ($scriptBytes -contains [byte]13)", creator)
+        self.assertIn("release shell script must use LF line endings", creator)
+
 
 if __name__ == "__main__":
     unittest.main()
