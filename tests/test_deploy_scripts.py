@@ -80,6 +80,13 @@ class DeployScriptTests(unittest.TestCase):
         self.assertIn("release contains a non-regular file", verifier)
         self.assertIn('source_commit":"[0-9a-fA-F]{40}', verifier)
 
+    def test_linux_release_verifier_uses_allowed_websocket_hosts(self):
+        verifier = (ROOT / "deploy" / "verify-release.sh").read_text(encoding="utf-8")
+        self.assertIn("DISCORD_GATEWAY_URL=wss://gateway.discord.gg/?v=10&encoding=json", verifier)
+        self.assertIn("PUSHBULLET_STREAM_URL=wss://stream.pushbullet.com/websocket", verifier)
+        self.assertNotIn("DISCORD_GATEWAY_URL=wss://127.0.0.1/", verifier)
+        self.assertNotIn("PUSHBULLET_STREAM_URL=wss://127.0.0.1/", verifier)
+
     def test_aarch64_build_enables_pie_relro_now_and_stripping(self):
         powershell = (ROOT / "build" / "build-aarch64.ps1").read_text(encoding="utf-8")
         shell = (ROOT / "build" / "build.sh").read_text(encoding="utf-8")
